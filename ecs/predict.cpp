@@ -424,7 +424,7 @@ int LASTBAGTOT=0;
 void Random(){
 	srand(time(0));
 	for(int i=0;i<TypeVM_number;i++){
-		PredictNum[TypeVmFor[i]]=(int)((ZYNUM[TypeVmFor[i]])+0.5+rand()%4);
+		PredictNum[TypeVmFor[i]]=(int)((ZYNUM[TypeVmFor[i]])+0.5+rand()%7);
 		//PredictNum[TypeVmFor[i]]=100;
 		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.14;
 		LASTBAGTOT+=LASTBAGNUM[i];
