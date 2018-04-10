@@ -256,7 +256,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 	double S_[20]={0};
 	double S_u[20]={0};
-	const double w=3.50;
+	const double w=3.5;
 	for(int k=0;k<startday;k++){
 		for(int i=0;i<20;i++){
 			S_[i]=0;
@@ -295,7 +295,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 
 
-	double tempstart=startday%FPDay;
+/*	double tempstart=startday%FPDay;
 	for(int i=tempstart;i<startday;i+=FPDay){
 		int pos=(i-tempstart)/FPDay;
 		for(int j=0;j<FPDay;j++){
@@ -303,16 +303,21 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 				FPVMwareNum[pos][k]+=DataDetailVMwareNum[i+j][k];
 			}
 		}
+	}*/
+	for(int i=1;i<startday;i++){
+		for(int j=1;j<=15;j++){
+			FPVMwareNum[i][j]+=FPVMwareNum[i-1][j]+DataDetailVMwareNum[i][j];
+		}
 	}
-	int Len=(startday-1-tempstart)/FPDay;
+	int Len=startday-1;
 	for(int i=1;i<=15;i++){
-		for(int j=0;j<=2&&j<=Len;j++){
+		for(int j=0;j<=0&&j<=Len;j++){
 
 			PredictFPVMwareNum[0][i]+=FPVMwareNum[j][i];
 			TWOPredictMwareNum[0][i]+=FPVMwareNum[j][i];
 			ThreePredictMwareNum[0][i]+=FPVMwareNum[j][i];
 		}
-		if(2<=Len){
+/*		if(2<=Len){
 			PredictFPVMwareNum[0][i]=PredictFPVMwareNum[0][i]/3;
 			TWOPredictMwareNum[0][i]=TWOPredictMwareNum[0][i]/3;
 			ThreePredictMwareNum[0][i]=ThreePredictMwareNum[0][i]/3;
@@ -321,7 +326,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 			PredictFPVMwareNum[0][i]=PredictFPVMwareNum[0][i]/(Len+1);
 			TWOPredictMwareNum[0][i]=TWOPredictMwareNum[0][i]/(Len+1);
 			ThreePredictMwareNum[0][i]=ThreePredictMwareNum[0][i]/(Len+1);
-		}
+		}*/
 	}
 
 	double minFangCha=2000000000;
@@ -340,6 +345,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 					double BT=(alpha/((1-alpha)*(1-alpha)*2))*((6-5*alpha)*PredictFPVMwareNum[i-1][j]-2*(5-4*alpha)*TWOPredictMwareNum[i-1][j]+(4-3*alpha)*ThreePredictMwareNum[i-1][j]);
 					double CT=((alpha*alpha)/(2*(1-alpha)*(1-alpha)))*(PredictFPVMwareNum[i-1][j]-2*TWOPredictMwareNum[i-1][j]+ThreePredictMwareNum[i-1][j]);
 					double PreANS=AT+BT+CT;
+					if(Len-i<=20)
 					Fangcha+=pow((PreANS-FPVMwareNum[i][j]),2);
 			}
 			if(Fangcha<minFangCha-eps){
@@ -366,10 +372,16 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		double AT=3*PredictFPVMwareNum[Len][j]-3*TWOPredictMwareNum[Len][j]+ThreePredictMwareNum[Len][j];
 		double BT=(RealAlpha[j]/((1-RealAlpha[j])*(1-RealAlpha[j])*2))*((6-5*RealAlpha[j])*PredictFPVMwareNum[Len][j]-2*(5-4*RealAlpha[j])*TWOPredictMwareNum[Len][j]+(4-3*RealAlpha[j])*ThreePredictMwareNum[Len][j]);
 		double CT=((RealAlpha[j]*RealAlpha[j])/(2*(1-RealAlpha[j])*(1-RealAlpha[j])))*(PredictFPVMwareNum[Len][j]-2*TWOPredictMwareNum[Len][j]+ThreePredictMwareNum[Len][j]);
-		double PreANS=AT+BT+CT;
-		printf("A B C %lf %lf %lf %lf\n",AT,BT,CT,PreANS);
-		if(PreANS>=0)
-		ZYNUM[j]=((AT+BT+CT)*PredictDay)/(double)FPDay;
+		double PreANS=AT+BT*PredictDay+CT*PredictDay*PredictDay;
+
+		double AT2=3*PredictFPVMwareNum[Len-1][j]-3*TWOPredictMwareNum[Len-1][j]+ThreePredictMwareNum[Len-1][j];
+		double BT2=(RealAlpha[j]/((1-RealAlpha[j])*(1-RealAlpha[j])*2))*((6-5*RealAlpha[j])*PredictFPVMwareNum[Len-1][j]-2*(5-4*RealAlpha[j])*TWOPredictMwareNum[Len-1][j]+(4-3*RealAlpha[j])*ThreePredictMwareNum[Len-1][j]);
+		double CT2=((RealAlpha[j]*RealAlpha[j])/(2*(1-RealAlpha[j])*(1-RealAlpha[j])))*(PredictFPVMwareNum[Len-1][j]-2*TWOPredictMwareNum[Len-1][j]+ThreePredictMwareNum[Len-1][j]);
+		double PreANS2=AT2+BT2+CT2;
+
+		printf("A B C %lf %lf %lf %lf\n",AT,BT,CT,PreANS-PreANS2);
+		if(PreANS-PreANS2>=0)
+		ZYNUM[j]=PreANS-PreANS2;
 	}
 /*	for(int i=1;i<=startday;i++){
 		for(int j=1;j<=15;j++){
@@ -395,7 +407,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 		for(int i=1;i<=15;i++){
 			if(MFC[i]>=(K/15)){
-			//ZYNUM[i]=TEMPZYNUM[i]*PredictDay/days;
+			ZYNUM[i]=TEMPZYNUM[i]*PredictDay/days;
 			
 		}
 		printf("%lf\n", ZYNUM[i]);
@@ -414,7 +426,7 @@ void Random(){
 	for(int i=0;i<TypeVM_number;i++){
 		PredictNum[TypeVmFor[i]]=(int)((ZYNUM[TypeVmFor[i]])+0.5);
 		//PredictNum[TypeVmFor[i]]=100;
-		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.09;
+		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.15;
 		LASTBAGTOT+=LASTBAGNUM[i];
 		PredictTOT+=PredictNum[TypeVmFor[i]];
 	}
