@@ -234,7 +234,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		RealAlpha[i]=0.725;
 	}*/
 	int DAYDAY=15;
-	int days=1.55*PredictDay;
+	int days=1.5*PredictDay;
 	FPDay=PredictDay;
 	char name[50];
 	for(int i=0;i<data_num;i++){
@@ -345,7 +345,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 					double BT=(alpha/((1-alpha)*(1-alpha)*2))*((6-5*alpha)*PredictFPVMwareNum[i-1][j]-2*(5-4*alpha)*TWOPredictMwareNum[i-1][j]+(4-3*alpha)*ThreePredictMwareNum[i-1][j]);
 					double CT=((alpha*alpha)/(2*(1-alpha)*(1-alpha)))*(PredictFPVMwareNum[i-1][j]-2*TWOPredictMwareNum[i-1][j]+ThreePredictMwareNum[i-1][j]);
 					double PreANS=AT+BT+CT;
-					if(Len-i<=20)
+					if(Len-i<=21)
 					Fangcha+=pow((PreANS-FPVMwareNum[i][j]),2);
 			}
 			if(Fangcha<minFangCha-eps){
@@ -426,7 +426,7 @@ void Random(){
 	for(int i=0;i<TypeVM_number;i++){
 		PredictNum[TypeVmFor[i]]=(int)((ZYNUM[TypeVmFor[i]])+0.5);
 		//PredictNum[TypeVmFor[i]]=100;
-		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.15;
+		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.14;
 		LASTBAGTOT+=LASTBAGNUM[i];
 		PredictTOT+=PredictNum[TypeVmFor[i]];
 	}
