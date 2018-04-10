@@ -296,7 +296,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 
 	double tempstart=(startday-PredictDay)%FPDay;
-	for(int i=tempstart;i<startday;i+=FPDay){
+	for(int i=tempstart;i<=startday-PredictDay;i+=FPDay){
 		int pos=(i-tempstart)/FPDay;
 		for(int j=0;j<PredictDay;j++){
 			for(int k=1;k<=15;k++){
