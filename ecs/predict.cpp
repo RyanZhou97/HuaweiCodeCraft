@@ -385,7 +385,7 @@ int LASTBAGTOT=0;
 void Random(){
 	srand(time(0));
 	for(int i=0;i<TypeVM_number;i++){
-		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5);
+		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5+rand()%4);
 		//PredictNum[TypeVmFor[i]]=100;
 		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.145;
 		LASTBAGTOT+=LASTBAGNUM[i];
