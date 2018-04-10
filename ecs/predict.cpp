@@ -317,7 +317,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	double minFangCha=2000000000;
 	//get Good alpha
 
-	for(int j=1;j<=15;j++){
+/*	for(int j=1;j<=15;j++){
 		minFangCha=2000000000;
 		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.0001){
 			double Fangcha=0;
@@ -333,8 +333,8 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 					//printf("Fangcha:%lf\n",alpha);
 			}
 		}
-		printf("Fangcha:%lf\n",minFangCha);
-	}
+		//printf("Fangcha:%lf\n",minFangCha);
+	}*/
 	for(int i=1;i<=15;i++){
 		printf("Alpha %d %lf\n",i,RealAlpha[i]);
 	}
@@ -356,11 +356,11 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 				printf("%lf\n", ZYNUM[j]);
 			}
 		}
-	}
+	}*/
 
-*/
 
-/*	for(int i=1;i<=15;i++){
+	
+	for(int i=1;i<=15;i++){
 		ZYNUM[i]=0;
 	}
 
@@ -372,7 +372,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		for(int i=1;i<=15;i++){
 			ZYNUM[i]=ZYNUM[i]*PredictDay/days;
 			printf("%lf\n", ZYNUM[i]);
-	}*/
+	}
 /*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*/
 }
 void train(){
