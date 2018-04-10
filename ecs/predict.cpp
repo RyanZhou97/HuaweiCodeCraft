@@ -208,7 +208,6 @@ double DataDetailVMwareNum[600][20]={0};
 double PredictDataDetailVMwareNum[600][20]={0};
 double FPVMwareNum[600][20]={0};
 double PredictFPVMwareNum[600][20]={0};
-double TWOPredictMwareNum[600][20]={0};
 int FPDay=1;
 int cmp2(TrainData a,TrainData b){
 	return a.date<b.date;
@@ -255,7 +254,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 	double S_[20]={0};
 	double S_u[20]={0};
-	const double w=3.50;
+	const double w=3.5;
 	for(int k=0;k<startday;k++){
 		for(int i=0;i<20;i++){
 			S_[i]=0;
@@ -308,33 +307,25 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		for(int j=0;j<=2&&j<=Len;j++){
 
 			PredictFPVMwareNum[0][i]+=FPVMwareNum[j][i];
-			TWOPredictMwareNum[0][i]+=FPVMwareNum[j][i];
 		}
-		if(2<=Len){
+		if(2<=Len)
 			PredictFPVMwareNum[0][i]=PredictFPVMwareNum[0][i]/3;
-			TWOPredictMwareNum[0][i]=TWOPredictMwareNum[0][i]/3;
-		}
-		else {
+		else 
 			PredictFPVMwareNum[0][i]=PredictFPVMwareNum[0][i]/(Len+1);
-			TWOPredictMwareNum[0][i]=TWOPredictMwareNum[0][i]/(Len+1);
-		}
 	}
 
 	double minFangCha=2000000000;
 	double K=0;
 	//get Good alpha
 	double MFC[16];
+
 	for(int j=1;j<=15;j++){
 		minFangCha=2000000000;
 		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.0001){
 			double Fangcha=0;
 			for(int i=1;i<=Len;i++){
-					PredictFPVMwareNum[i][j]=alpha*FPVMwareNum[i][j]+(1-alpha)*PredictFPVMwareNum[i-1][j];	
-					TWOPredictMwareNum[i][j]=alpha*PredictFPVMwareNum[i][j]+(1-alpha)*TWOPredictMwareNum[i-1][j];
-					double AT=2*PredictFPVMwareNum[i-1][j]-TWOPredictMwareNum[i-1][j];
-					double BT=(alpha/(1-alpha))*(PredictFPVMwareNum[i-1][j]-TWOPredictMwareNum[i-1][j]);
-					double PreANS=AT+BT;
-					Fangcha+=pow((PreANS-FPVMwareNum[i][j]),2);
+					PredictFPVMwareNum[i][j]=alpha*FPVMwareNum[i-1][j]+(1-alpha)*PredictFPVMwareNum[i-1][j];	
+					Fangcha+=pow((PredictFPVMwareNum[i][j]-FPVMwareNum[i][j]),2);
 			}
 			if(Fangcha<minFangCha-eps){
 					minFangCha=Fangcha;
@@ -349,17 +340,16 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	for(int i=1;i<=15;i++){
 		printf("Alpha %d %lf\n",i,RealAlpha[i]);
 	}
-	for(int i=1;i<=Len;i++){
+	for(int i=1;i<=Len+1;i++){
 		for(int j=1;j<=15;j++){
-			PredictFPVMwareNum[i][j]=RealAlpha[j]*FPVMwareNum[i][j]+(1-RealAlpha[j])*PredictFPVMwareNum[i-1][j];	
-			TWOPredictMwareNum[i][j]=RealAlpha[j]*PredictFPVMwareNum[i][j]+(1-RealAlpha[j])*TWOPredictMwareNum[i-1][j];
+			PredictFPVMwareNum[i][j]=RealAlpha[j]*FPVMwareNum[i-1][j]+(1-RealAlpha[j])*PredictFPVMwareNum[i-1][j];
+			if(i==Len+1){
+				ZYNUM[j]=PredictFPVMwareNum[i][j];
+				
+			}
 		}
 	}
-	for(int j=1;j<=15;j++){
-		double AT=2*PredictFPVMwareNum[Len][j]-TWOPredictMwareNum[Len][j];
-		double BT=(RealAlpha[j]/(1-RealAlpha[j]))*(PredictFPVMwareNum[Len][j]-TWOPredictMwareNum[Len][j]);
-		ZYNUM[j]=AT+BT;
-	}
+
 /*	for(int i=1;i<=startday;i++){
 		for(int j=1;j<=15;j++){
 			PredictDataDetailVMwareNum[i][j]=RealAlpha[j]*DataDetailVMwareNum[i-1][j]+(1-RealAlpha[j])*PredictDataDetailVMwareNum[i-1][j];
@@ -370,6 +360,8 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		}
 	}*/
 
+
+	
 
 	int TEMPZYNUM[20];
 	for(int i=1;i<=15;i++){
@@ -401,7 +393,7 @@ int LASTBAGTOT=0;
 void Random(){
 	srand(time(0));
 	for(int i=0;i<TypeVM_number;i++){
-		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5);
+		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5+rand()%4);
 		//PredictNum[TypeVmFor[i]]=100;
 		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.145;
 		LASTBAGTOT+=LASTBAGNUM[i];
