@@ -279,7 +279,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 			//printf("S_u:%lf\n",S_u[j]);
 			if(DataDetailVMwareNum[k][j]>S_u[j]*w+S_[j]){
 				printf("k:%d yichang:%lf\n",k,DataDetailVMwareNum[k][j]);
-				DataDetailVMwareNum[k][j]=S_u[j]*w+S_[j];
+				DataDetailVMwareNum[k][j]=(int)(S_u[j]*w+S_[j]);
 				
 			}
 			else if(DataDetailVMwareNum[k][j]<S_[j]-S_u[j]*w){
@@ -304,12 +304,25 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 			}
 		}
 	}*/
-	for(int i=1;i<startday;i++){
+	int TestDataStart=0;
+	int WHATGETDAY=60;
+	if(startday>=WHATGETDAY){
+		TestDataStart=startday-WHATGETDAY;
+	}
+	else TestDataStart=0;
+
+	for(int i=TestDataStart;i<startday;i++){
 		for(int j=1;j<=15;j++){
-			FPVMwareNum[i][j]+=FPVMwareNum[i-1][j]+DataDetailVMwareNum[i][j];
+			int pos=i-TestDataStart;
+			if(pos==0)
+				FPVMwareNum[pos][j]+=DataDetailVMwareNum[i][j];
+			else 
+				FPVMwareNum[pos][j]+=FPVMwareNum[pos-1][j]+DataDetailVMwareNum[i][j];
 		}
 	}
-	int Len=startday-1;
+
+
+	int Len=startday-TestDataStart-1;
 	for(int i=1;i<=15;i++){
 		for(int j=0;j<=0&&j<=Len;j++){
 
@@ -335,7 +348,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	double MFC[16];
 	for(int j=1;j<=15;j++){
 		minFangCha=2000000000;
-		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.0001){
+		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.001){
 			double Fangcha=0;
 			for(int i=1;i<=Len;i++){
 					PredictFPVMwareNum[i][j]=alpha*FPVMwareNum[i][j]+(1-alpha)*PredictFPVMwareNum[i-1][j];	
@@ -424,9 +437,9 @@ int LASTBAGTOT=0;
 void Random(){
 	srand(time(0));
 	for(int i=0;i<TypeVM_number;i++){
-		PredictNum[TypeVmFor[i]]=(int)((ZYNUM[TypeVmFor[i]])+0.5+rand()%7);
+		PredictNum[TypeVmFor[i]]=(int)((ZYNUM[TypeVmFor[i]])+0.5);
 		//PredictNum[TypeVmFor[i]]=100;
-		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.14;
+		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.145;
 		LASTBAGTOT+=LASTBAGNUM[i];
 		PredictTOT+=PredictNum[TypeVmFor[i]];
 	}
