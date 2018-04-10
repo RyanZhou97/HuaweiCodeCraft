@@ -404,7 +404,7 @@ void Random(){
 	for(int i=0;i<TypeVM_number;i++){
 		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5);
 		//PredictNum[TypeVmFor[i]]=100;
-		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.9;
+		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.095;
 		LASTBAGTOT+=LASTBAGNUM[i];
 		PredictTOT+=PredictNum[TypeVmFor[i]];
 	}
