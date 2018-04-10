@@ -255,7 +255,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 	double S_[20]={0};
 	double S_u[20]={0};
-	const double w=3.55;
+	const double w=3.50;
 	for(int k=0;k<startday;k++){
 		for(int i=0;i<20;i++){
 			S_[i]=0;
@@ -321,8 +321,9 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	}
 
 	double minFangCha=2000000000;
+	double K=0;
 	//get Good alpha
-
+	double MFC[16];
 	for(int j=1;j<=15;j++){
 		minFangCha=2000000000;
 		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.0001){
@@ -341,7 +342,9 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 					//printf("Fangcha:%lf\n",alpha);
 			}
 		}
-		//printf("Fangcha:%lf\n",minFangCha);
+		MFC[j]=minFangCha;
+		K=K+MFC[j];
+		printf("Fangcha:%lf\n",minFangCha);
 	}
 	for(int i=1;i<=15;i++){
 		printf("Alpha %d %lf\n",i,RealAlpha[i]);
@@ -368,20 +371,24 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	}*/
 
 
-	
-/*	for(int i=1;i<=15;i++){
-		ZYNUM[i]=0;
+	int TEMPZYNUM[20];
+	for(int i=1;i<=15;i++){
+		TEMPZYNUM[i]=0;
 	}
 
 
 	for(int i=startday-days;i<startday;i++)
 		for(int j=1;j<=15;j++){
-			ZYNUM[j]+=DataDetailVMwareNum[i][j];
+			TEMPZYNUM[j]+=DataDetailVMwareNum[i][j];
 		}
+
 		for(int i=1;i<=15;i++){
-			ZYNUM[i]=ZYNUM[i]*PredictDay/days;
-			printf("%lf\n", ZYNUM[i]);
-	}*/
+			if(MFC[i]>=(K/15)){
+			ZYNUM[i]=TEMPZYNUM[i]*PredictDay/days;
+			
+		}
+		printf("%lf\n", ZYNUM[i]);
+	}
 /*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*//*-----*/
 }
 void train(){
@@ -394,7 +401,7 @@ int LASTBAGTOT=0;
 void Random(){
 	srand(time(0));
 	for(int i=0;i<TypeVM_number;i++){
-		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5+rand()%4);
+		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5);
 		//PredictNum[TypeVmFor[i]]=100;
 		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.145;
 		LASTBAGTOT+=LASTBAGNUM[i];
