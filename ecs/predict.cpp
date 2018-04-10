@@ -235,7 +235,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	}*/
 	int DAYDAY=15;
 	int days=1.55*PredictDay;
-	FPDay=1;
+	FPDay=PredictDay;
 	char name[50];
 	for(int i=0;i<data_num;i++){
 		Data[i].ID.resize(100);
@@ -295,16 +295,16 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 
 
-	double tempstart=(startday-PredictDay)%FPDay;
-	for(int i=tempstart;i<=startday-PredictDay;i+=FPDay){
+	double tempstart=startday%FPDay;
+	for(int i=tempstart;i<startday;i+=FPDay){
 		int pos=(i-tempstart)/FPDay;
-		for(int j=0;j<PredictDay;j++){
+		for(int j=0;j<FPDay;j++){
 			for(int k=1;k<=15;k++){
 				FPVMwareNum[pos][k]+=DataDetailVMwareNum[i+j][k];
 			}
 		}
 	}
-	int Len=(startday-PredictDay-tempstart)/FPDay;
+	int Len=(startday-1-tempstart)/FPDay;
 	for(int i=1;i<=15;i++){
 		for(int j=0;j<=2&&j<=Len;j++){
 
@@ -366,10 +366,10 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		double AT=3*PredictFPVMwareNum[Len][j]-3*TWOPredictMwareNum[Len][j]+ThreePredictMwareNum[Len][j];
 		double BT=(RealAlpha[j]/((1-RealAlpha[j])*(1-RealAlpha[j])*2))*((6-5*RealAlpha[j])*PredictFPVMwareNum[Len][j]-2*(5-4*RealAlpha[j])*TWOPredictMwareNum[Len][j]+(4-3*RealAlpha[j])*ThreePredictMwareNum[Len][j]);
 		double CT=((RealAlpha[j]*RealAlpha[j])/(2*(1-RealAlpha[j])*(1-RealAlpha[j])))*(PredictFPVMwareNum[Len][j]-2*TWOPredictMwareNum[Len][j]+ThreePredictMwareNum[Len][j]);
-		double PreANS=AT+PredictDay*BT+PredictDay*PredictDay*CT;
+		double PreANS=AT+BT+CT;
 		printf("A B C %lf %lf %lf %lf\n",AT,BT,CT,PreANS);
 		if(PreANS>=0)
-		ZYNUM[j]=(PreANS);
+		ZYNUM[j]=((AT+BT+CT)*PredictDay)/(double)FPDay;
 	}
 /*	for(int i=1;i<=startday;i++){
 		for(int j=1;j<=15;j++){
@@ -395,8 +395,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 		for(int i=1;i<=15;i++){
 			if(MFC[i]>=(K/15)){
-				printf("i:%d\n",i);
-			ZYNUM[i]=TEMPZYNUM[i]*PredictDay/days;
+			//ZYNUM[i]=TEMPZYNUM[i]*PredictDay/days;
 			
 		}
 		printf("%lf\n", ZYNUM[i]);
