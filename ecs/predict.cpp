@@ -308,11 +308,16 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 		for(int j=0;j<=2&&j<=Len;j++){
 
 			PredictFPVMwareNum[0][i]+=FPVMwareNum[j][i];
+			TWOPredictMwareNum[0][i]+=FPVMwareNum[j][i];
 		}
-		if(2<=Len)
+		if(2<=Len){
 			PredictFPVMwareNum[0][i]=PredictFPVMwareNum[0][i]/3;
-		else 
+			TWOPredictMwareNum[0][i]=TWOPredictMwareNum[0][i]/3;
+		}
+		else {
 			PredictFPVMwareNum[0][i]=PredictFPVMwareNum[0][i]/(Len+1);
+			TWOPredictMwareNum[0][i]=TWOPredictMwareNum[0][i]/(Len+1);
+		}
 	}
 
 	double minFangCha=2000000000;
