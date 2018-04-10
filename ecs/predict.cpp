@@ -255,7 +255,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 
 	double S_[20]={0};
 	double S_u[20]={0};
-	const double w=3.50;
+	const double w=3.5;
 	for(int k=0;k<startday;k++){
 		for(int i=0;i<20;i++){
 			S_[i]=0;
@@ -402,7 +402,7 @@ int LASTBAGTOT=0;
 void Random(){
 	srand(time(0));
 	for(int i=0;i<TypeVM_number;i++){
-		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5);
+		PredictNum[TypeVmFor[i]]=(int)((((ZYNUM[TypeVmFor[i]]*PredictDay)/(double)FPDay))+0.5+rand()%4);
 		//PredictNum[TypeVmFor[i]]=100;
 		LASTBAGNUM[TypeVmFor[i]]=PredictNum[TypeVmFor[i]]*0.095;
 		LASTBAGTOT+=LASTBAGNUM[i];
