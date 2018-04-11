@@ -254,7 +254,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	int startday=DaysBetween2Date(PredictStartTime,Data[0].date);
 
 	int TestDataStart=0;
-	int WHATGETDAY=70;
+	int WHATGETDAY=50;
 	if(startday>=WHATGETDAY){
 		TestDataStart=startday-WHATGETDAY;
 	}
