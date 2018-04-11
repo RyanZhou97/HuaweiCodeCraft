@@ -281,7 +281,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 				S_u[j]+=pow(DataDetailVMwareNum[i][j]-S_[j],2);
 			}
 		for(int j=1;j<=15;j++){
-			S_u[j]=sqrt(S_u[j]/startday);
+			S_u[j]=sqrt(S_u[j]/(startday-TestDataStart));
 			//printf("S_u:%lf\n",S_u[j]);
 			if(DataDetailVMwareNum[k][j]>S_u[j]*w+S_[j]){
 				printf("k:%d yichang:%lf\n",k,DataDetailVMwareNum[k][j]);
