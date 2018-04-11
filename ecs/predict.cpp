@@ -273,7 +273,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 				S_[j]+=DataDetailVMwareNum[i][j];
 			}
 		for(int j=1;j<=15;j++){
-			S_[j]=S_[j]/startday;
+			S_[j]=S_[j]/(startday-TestDataStart);
 			//printf("S_[j]:%lf\n",S_[j]);
 		}
 		for(int i=TestDataStart;i<startday;i++)
