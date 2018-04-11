@@ -253,16 +253,22 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	int endday=DaysBetween2Date(PredictEndTime,Data[0].date);
 	int startday=DaysBetween2Date(PredictStartTime,Data[0].date);
 
+	int TestDataStart=0;
+	int WHATGETDAY=60;
+	if(startday>=WHATGETDAY){
+		TestDataStart=startday-WHATGETDAY;
+	}
+	else TestDataStart=0;
 
 	double S_[20]={0};
 	double S_u[20]={0};
 	const double w=3.5;
-	for(int k=0;k<startday;k++){
+	for(int k=TestDataStart;k<startday;k++){
 		for(int i=0;i<20;i++){
 			S_[i]=0;
 			S_u[i]=0;
 		}
-		for(int i=0;i<startday;i++)
+		for(int i=TestDataStart;i<startday;i++)
 			for(int j=1;j<=15;j++){
 				S_[j]+=DataDetailVMwareNum[i][j];
 			}
@@ -270,7 +276,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 			S_[j]=S_[j]/startday;
 			//printf("S_[j]:%lf\n",S_[j]);
 		}
-		for(int i=0;i<startday;i++)
+		for(int i=TestDataStart;i<startday;i++)
 			for(int j=1;j<=15;j++){
 				S_u[j]+=pow(DataDetailVMwareNum[i][j]-S_[j],2);
 			}
@@ -304,12 +310,6 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 			}
 		}
 	}*/
-	int TestDataStart=0;
-	int WHATGETDAY=60;
-	if(startday>=WHATGETDAY){
-		TestDataStart=startday-WHATGETDAY;
-	}
-	else TestDataStart=0;
 
 	for(int i=TestDataStart;i<startday;i++){
 		for(int j=1;j<=15;j++){
@@ -348,7 +348,7 @@ void train_input(char * data[MAX_DATA_NUM], int data_num){
 	double MFC[16];
 	for(int j=1;j<=15;j++){
 		minFangCha=2000000000;
-		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.001){
+		for(double alpha=0.001;alpha<=(1-eps);alpha+=0.001){ //0.0001->0.001
 			double Fangcha=0;
 			for(int i=1;i<=Len;i++){
 					PredictFPVMwareNum[i][j]=alpha*FPVMwareNum[i][j]+(1-alpha)*PredictFPVMwareNum[i-1][j];	
