@@ -298,7 +298,7 @@ void Predict()
 		if(VMExist[i])
 		{
 			predictVMNum[i] = trainMVAvg[i]*predictDays+0.5;
-            predictVMNum[i] = 50;
+           // predictVMNum[i] = 50;
 			predictVMTotNum += predictVMNum[i];
 			extraVMNum[i] = predictVMNum[i]*0.2;
 			predictVMTotCPU += predictVMNum[i]*VMCPU[i];
@@ -319,7 +319,7 @@ void FillServer(Server &server, int *VMNum)
 				fillVMNum[i][j][k]=0;
 			}
 	for(int VMType=1;VMType<=VM_TYPE_NUM;VMType++)
-		for(int i=1;i<=VMNum[VMType];i++)
+		for(int i=0;i<=VMNum[VMType];i++)
 		{
 			int totCPU = VMCPU[VMType]*i;
 			int totMEM = VMMEM[VMType]*i;
