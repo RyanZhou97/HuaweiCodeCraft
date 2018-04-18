@@ -47,11 +47,12 @@ int VMFor[VM_TYPE_NUM+5];
 
 /*-----------------Train-----------------------*/
 int trainDays;
+int trainLen;
 char trainStartDate[20];
 char trainEndDate[20];
 double trainMVAvg[VM_TYPE_NUM+5];
-int trainVMTot[VM_TYPE_NUM+5];
-int trainVMDetail[VM_TYPE_NUM+5][1000];
+double trainVMTot[VM_TYPE_NUM+5];
+double trainVMDetail[VM_TYPE_NUM+5][1000];
 
 /*-------------Predict-----------------------*/
 int predictDays;
@@ -209,6 +210,7 @@ void train_input(char * Data[MAX_DATA_NUM], int data_num)
 		if(strcmp(trainEndDate,data[i].date)<0)
 			strcpy(trainEndDate,data[i].date);
 	}
+    trainLen=DaysBetween2Date(trainStartDate,trainEndDate);
 	for(int i=0;i<data_num;i++)
 	{
 		int tempday = DaysBetween2Date(data[i].date,trainEndDate);
@@ -216,6 +218,45 @@ void train_input(char * Data[MAX_DATA_NUM], int data_num)
 	}
 }
 
+void Denoise(){
+    double avg[20]={0};
+    double sigma[20]={0};
+    double w=3.5;
+    for(int k=trainLen;k>=0;k--){
+        //init
+        for(int i=0;i<20;i++){
+            avg[i]=0;
+            sigma[i]=0;
+        }
+        //get avg
+        for(int i=trainLen;i>=0;i--)
+            for(int j=1;j<=VM_TYPE_NUM;j++){
+                avg[j]+=trainVMDetail[j][i];
+            }
+        for(int j=1;j<=VM_TYPE_NUM;j++){
+            avg[j]=avg[j]/(trainLen+1);
+        }
+        //get sigma
+        for(int i=trainLen;i>=0;i--)
+            for(int j=1;j<=VM_TYPE_NUM;j++){
+                sigma[j]+=pow(trainVMDetail[j][i]-avg[j],2);
+            }
+        //denoise
+        for(int j=1;j<=VM_TYPE_NUM;j++){
+            sigma[j]=sqrt(sigma[j]/(trainLen+1));
+            if(trainVMDetail[j][k]>sigma[j]*w+avg[j]){
+                trainVMDetail[j][k]=sigma[j]*w+avg[j];
+               // printf("yichang:%d\n",DataDetailVMwareNum[k][j]);
+            }
+            else if(trainVMDetail[j][k]<sigma[j]*w+avg[j]){
+                if(sigma[j]*w+avg[j]>0)
+                    trainVMDetail[j][k]=sigma[j]*w+avg[j];
+                else 
+                    trainVMDetail[j][k]=0;
+            }
+        }
+    }
+}
 void Show()
 {
 	printf("predictVMTotNum:%d\n",predictVMTotNum);
@@ -257,8 +298,9 @@ void Predict()
 		if(VMExist[i])
 		{
 			predictVMNum[i] = trainMVAvg[i]*predictDays+0.5;
+            predictVMNum[i] = 50;
 			predictVMTotNum += predictVMNum[i];
-			extraVMNum[i] = predictVMNum[i];
+			extraVMNum[i] = predictVMNum[i]*0.2;
 			predictVMTotCPU += predictVMNum[i]*VMCPU[i];
 			predictVMTotMEM += predictVMNum[i]*VMMEM[i];
 		}
