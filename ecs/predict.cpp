@@ -14,7 +14,7 @@ int serverCPU[SERVER_TYPE_NUM+5];
 int serverMEM[SERVER_TYPE_NUM+5];
 int serverDISK[SERVER_TYPE_NUM+5];
 int serverNum[SERVER_TYPE_NUM+5];
-int serverTot ;
+int serverTot=0 ;
 struct Server
 {
     int type;
@@ -202,7 +202,8 @@ void common_input(char * info[MAX_INFO_NUM])
     sscanf(info[7+VM_type_num],"%s %s",predictStartDate,timestart);  // get 2015-02-20  no hava 00:00:00
     sscanf(info[8+VM_type_num],"%s %s",predictEndDate,timeend);      // and so go
     printf("timestart:%s timeend:%s\n",timestart,timeend);
-    predictDays=DaysBetween2Date(predictStartDate,predictEndDate)+SecondsLenCount(timestart,timeend)/86400;
+    predictDays=DaysBetween2Date(predictStartDate,predictEndDate);
+    //+SecondsLenCount(timestart,timeend)/86400;
 
 
 }
@@ -291,6 +292,7 @@ void CalculatePercent()
     printf("predictVMTotCPU:%d predictVMTotMEM:%d\n",predictVMTotCPU,predictVMTotMEM);
     printf("serverTotCPU:%d serverTotMEM:%d\n",serverTotCPU,serverTotMEM);
     printf("CPUPercent:%.6f MEMPercent:%.6f\n",predictVMTotCPU*1.0/serverTotCPU,predictVMTotMEM*1.0/serverTotMEM);
+
 }
 
 void Train()
@@ -308,10 +310,10 @@ void Predict()
     for(int i=1;i<=VM_TYPE_NUM;i++)
         if(VMExist[i])
         {
-            predictVMNum[i] = trainMVAvg[i]*predictDays+0.5;
-           // predictVMNum[i] = 50;
+            predictVMNum[i] = (trainMVAvg[i]*predictDays)*1.37+0.5;
+            predictVMNum[i] = 50;
             predictVMTotNum += predictVMNum[i];
-            extraVMNum[i] = predictVMNum[i]*0.2;
+            extraVMNum[i] = predictVMNum[i]*0.33;
             predictVMTotCPU += predictVMNum[i]*VMCPU[i];
             predictVMTotMEM += predictVMNum[i]*VMMEM[i];
         }
@@ -398,7 +400,7 @@ void InitAns()
         if(tmpVMTotCPU==0) break;
         int tmpServerNum[SERVER_TYPE_NUM+5];
             PredictServerNum(tmpVMTotCPU,tmpVMTotMEM,tmpServerNum);
-        for(int i=1;i<=SERVER_TYPE_NUM;i++)
+        for(int i=SERVER_TYPE_NUM;i>=1;i--)
         {
             serverNum[i] += tmpServerNum[i];
             for(int j=1;j<=tmpServerNum[i];j++)
@@ -410,7 +412,7 @@ void InitAns()
             }
         }
 
-    //    random_shuffle(serverList+len,serverList+serverTot);
+     //   random_shuffle(serverList+len,serverList+serverTot);
         for(;len<serverTot;len++)
             FillServer(serverList[len],tmpVMNum);
     }
@@ -424,7 +426,8 @@ void FinalFill()
     int tmpVMNum[VM_TYPE_NUM+5];
     for(int i=1;i<=VM_TYPE_NUM;i++)
         tmpVMNum[i] = extraVMNum[i];
-    FillServer(serverList[serverTot-1], tmpVMNum);
+    for(int i=0;i<serverTot;i++)
+    FillServer(serverList[i], tmpVMNum);
     for(int i=1;i<=VM_TYPE_NUM;i++)
         printf("extraVMNum[%d]:%d tmpVMNum[%d]:%d\n",i,extraVMNum[i],i,tmpVMNum[i]);
     for(int i=1;i<=VM_TYPE_NUM;i++)
