@@ -48,6 +48,7 @@ int VMFor[VM_TYPE_NUM+5];
 /*-----------------Train-----------------------*/
 int trainDays;
 int trainLen;
+int TrainEndPredictStart;
 char trainStartDate[20];
 char trainEndDate[20];
 double trainMVAvg[VM_TYPE_NUM+5];
@@ -202,8 +203,7 @@ void common_input(char * info[MAX_INFO_NUM])
     sscanf(info[7+VM_type_num],"%s %s",predictStartDate,timestart);  // get 2015-02-20  no hava 00:00:00
     sscanf(info[8+VM_type_num],"%s %s",predictEndDate,timeend);      // and so go
     printf("timestart:%s timeend:%s\n",timestart,timeend);
-    predictDays=DaysBetween2Date(predictStartDate,predictEndDate);
-    //+SecondsLenCount(timestart,timeend)/86400;
+    predictDays=DaysBetween2Date(predictStartDate,predictEndDate);+SecondsLenCount(timestart,timeend)/86400;
 
 
 }
@@ -222,49 +222,51 @@ void train_input(char * Data[MAX_DATA_NUM], int data_num)
         if(strcmp(trainEndDate,data[i].date)<0)
             strcpy(trainEndDate,data[i].date);
     }
+
     trainLen=DaysBetween2Date(trainStartDate,trainEndDate);
     for(int i=0;i<data_num;i++)
     {
         int tempday = DaysBetween2Date(data[i].date,trainEndDate);
         trainVMDetail[VMStringToInt[string(data[i].type)]][tempday]++;
     }
+    TrainEndPredictStart=DaysBetween2Date(predictStartDate,trainEndDate);
 }
 
-void Denoise(){
-    double avg[20]={0};
-    double sigma[20]={0};
-    double w=3.5;
-    for(int k=trainLen;k>=0;k--){
+void Denoise()
+{
+    double avg[VM_TYPE_NUM+5]={0};
+    double sigma[VM_TYPE_NUM+5]={0};
+    double w=4.1;
+    for(int k=trainLen;k>=0;k--)
+    {
         //init
-        for(int i=0;i<20;i++){
+        for(int i=0;i<20;i++)
+        {
             avg[i]=0;
             sigma[i]=0;
         }
         //get avg
         for(int i=trainLen;i>=0;i--)
-            for(int j=1;j<=VM_TYPE_NUM;j++){
+            for(int j=1;j<=VM_TYPE_NUM;j++)
                 avg[j]+=trainVMDetail[j][i];
-            }
-        for(int j=1;j<=VM_TYPE_NUM;j++){
+        for(int j=1;j<=VM_TYPE_NUM;j++)
             avg[j]=avg[j]/(trainLen+1);
-        }
+
         //get sigma
         for(int i=trainLen;i>=0;i--)
-            for(int j=1;j<=VM_TYPE_NUM;j++){
+            for(int j=1;j<=VM_TYPE_NUM;j++)
                 sigma[j]+=pow(trainVMDetail[j][i]-avg[j],2);
-            }
+
         //denoise
-        for(int j=1;j<=VM_TYPE_NUM;j++){
+        for(int j=1;j<=VM_TYPE_NUM;j++)
+        {
             sigma[j]=sqrt(sigma[j]/(trainLen+1));
             if(trainVMDetail[j][k]>sigma[j]*w+avg[j]){
                 trainVMDetail[j][k]=sigma[j]*w+avg[j];
                // printf("yichang:%d\n",DataDetailVMwareNum[k][j]);
             }
-            else if(trainVMDetail[j][k]<sigma[j]*w+avg[j]){
-                if(sigma[j]*w+avg[j]>0)
-                    trainVMDetail[j][k]=sigma[j]*w+avg[j];
-                else 
-                    trainVMDetail[j][k]=0;
+            else if(trainVMDetail[j][k]<avg[j]-sigma[j]*w){
+                    trainVMDetail[j][k]=avg[j]-sigma[j]*w;
             }
         }
     }
@@ -292,7 +294,6 @@ void CalculatePercent()
     printf("predictVMTotCPU:%d predictVMTotMEM:%d\n",predictVMTotCPU,predictVMTotMEM);
     printf("serverTotCPU:%d serverTotMEM:%d\n",serverTotCPU,serverTotMEM);
     printf("CPUPercent:%.6f MEMPercent:%.6f\n",predictVMTotCPU*1.0/serverTotCPU,predictVMTotMEM*1.0/serverTotMEM);
-
 }
 
 void Train()
@@ -310,8 +311,9 @@ void Predict()
     for(int i=1;i<=VM_TYPE_NUM;i++)
         if(VMExist[i])
         {
-            predictVMNum[i] = (trainMVAvg[i]*predictDays)*1.37+0.5;
-            predictVMNum[i] = 50;
+            predictVMNum[i] = (trainMVAvg[i]*predictDays)*max(0.0,TrainEndPredictStart/7.0+0.5)+0.5+rand()%4;
+
+            //predictVMNum[i] = 140;
             predictVMTotNum += predictVMNum[i];
             extraVMNum[i] = predictVMNum[i]*0.33;
             predictVMTotCPU += predictVMNum[i]*VMCPU[i];
@@ -336,6 +338,7 @@ void FillServer(Server &server, int *VMNum)
         {
             int totCPU = VMCPU[VMType]*i;
             int totMEM = VMMEM[VMType]*i;
+            //int value = totCPU*serverCPU[server.type] + totMEM*serverMEM[server.type];
             int value = totCPU + totMEM;
             for(int cpu=server.freeCPU;cpu>=totCPU;cpu--)
                 for(int mem=server.freeMEM;mem>=totMEM;mem--)
@@ -360,6 +363,7 @@ void CutServer(Server &server)
 
 void PredictServerNum(int VMTotCPU,int VMTotMEM,int *serverNum)
 {
+    printf("111%d %d\n",VMTotCPU,VMTotMEM );
     int limitServerNum[SERVER_TYPE_NUM+5];
     for(int i=1;i<=SERVER_TYPE_NUM;i++)
         limitServerNum[i] = max((VMTotCPU+serverCPU[i]-1)/serverCPU[i],(VMTotMEM+serverMEM[i]-1)/serverMEM[i]);
@@ -399,7 +403,10 @@ void InitAns()
             }
         if(tmpVMTotCPU==0) break;
         int tmpServerNum[SERVER_TYPE_NUM+5];
-            PredictServerNum(tmpVMTotCPU,tmpVMTotMEM,tmpServerNum);
+        if(tmpVMNum[18]>0)
+        PredictServerNum(serverCPU[2],serverMEM[2],tmpServerNum);    
+        else    
+        PredictServerNum(tmpVMTotCPU,tmpVMTotMEM,tmpServerNum);
         for(int i=SERVER_TYPE_NUM;i>=1;i--)
         {
             serverNum[i] += tmpServerNum[i];
@@ -427,7 +434,7 @@ void FinalFill()
     for(int i=1;i<=VM_TYPE_NUM;i++)
         tmpVMNum[i] = extraVMNum[i];
     for(int i=0;i<serverTot;i++)
-    FillServer(serverList[i], tmpVMNum);
+        FillServer(serverList[i], tmpVMNum);
     for(int i=1;i<=VM_TYPE_NUM;i++)
         printf("extraVMNum[%d]:%d tmpVMNum[%d]:%d\n",i,extraVMNum[i],i,tmpVMNum[i]);
     for(int i=1;i<=VM_TYPE_NUM;i++)
@@ -474,13 +481,13 @@ void predict_server(char * info[MAX_INFO_NUM], char * data[MAX_DATA_NUM], int da
     Init_VMware(); 
     common_input(info);
     train_input(data,data_num);
+  //  Denoise();
     Train();
-    Denoise();
-        Predict();
-        InitAns();
-        FinalFill();
-        Show();
-        CalculatePercent();
+    Predict();
+    InitAns();
+    FinalFill();
+    Show();
+    CalculatePercent();
     SA();
     Output();
     write_result(output, filename);
