@@ -311,7 +311,7 @@ void Predict()
     for(int i=1;i<=VM_TYPE_NUM;i++)
         if(VMExist[i])
         {
-            predictVMNum[i] = (trainMVAvg[i]*predictDays)*max(0.0,TrainEndPredictStart/7.0+0.5)+0.5+rand()%4;
+            predictVMNum[i] = (trainMVAvg[i]*predictDays)*max(0.0,TrainEndPredictStart/7.0+0.51)+0.5;
 
             //predictVMNum[i] = 140;
             predictVMTotNum += predictVMNum[i];
