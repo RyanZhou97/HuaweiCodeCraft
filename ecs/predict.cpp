@@ -331,14 +331,14 @@ void Train()
 
 void Predict()
 {
-    int a[]={0, 0, 0, 0, 0, 0, 0, 115, 179, 144, 0, 0, 0, 0, 26, 194, 0, 23};
+    int a[]={0, 0, 0, 105, 0, 0, 0, 270, 0, 152, 264, 0, 120, 0, 50, 0, 270, 188};
     int b[]={76,89,14,35,92,12,10,140,37,4,43,35,13,13,5,14,7,0};
     for(int i=1;i<=VM_TYPE_NUM;i++)
         if(VMExist[i])
         {
            
             predictVMNum[i] = trainMVAvg[i] * predictDays  +0.5;
-            a[i-1]=predictVMNum[i];
+            //predictVMNum[i]=a[i-1];
             //predictVMNum[i] = 420;
             predictVMTotNum += predictVMNum[i];
             extraVMNum[i] = predictVMNum[i]*0.3;
@@ -602,7 +602,7 @@ void predict_server(char * info[MAX_INFO_NUM], char * data[MAX_DATA_NUM], int da
     Train();
     Predict();
     InitAns();
-    //FinalFill();
+    FinalFill();
     Show();
     CalculatePercent();
     Output();
