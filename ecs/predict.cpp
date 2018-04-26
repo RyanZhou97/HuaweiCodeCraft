@@ -320,10 +320,12 @@ void Train()
         sum+=everVMTot[i];
       
     }
-    
    double p=1,a=0.5;
     for(int i=1;i<=VM_TYPE_NUM;i++){
-        p=1.2+min((((TrainEndPredictStart+TrainEndPredictStart+predictDays)/2.0)/7.0)*0.25,2.0);//2*0.25 +  4*0.25
+        if(predictDays+TrainEndPredictStart<=18)
+        p=1.2;
+        else 
+        p=1.8;
         trainMVAvg[i]= (trainMVAvg[i]*a+everVMTot[i]*(1-a))*p;
     }
 }
@@ -338,8 +340,7 @@ void Predict()
         {
            
             predictVMNum[i] = trainMVAvg[i] * predictDays  +0.5;
-            //predictVMNum[i]=a[i-1];
-            //predictVMNum[i] = 420;
+            a[i-1]= predictVMNum[i];
             predictVMTotNum += predictVMNum[i];
             extraVMNum[i] = predictVMNum[i]*0.3;
             predictVMTotCPU += predictVMNum[i]*VMCPU[i];
