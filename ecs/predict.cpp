@@ -292,12 +292,11 @@ double everVMTot[VM_TYPE_NUM+5];
 double TentrainVMTot[VM_TYPE_NUM+5];
 void Train()
 {
-
     trainDays = 25;
     for(int i=1;i<=VM_TYPE_NUM;i++)
         for(int j=0;j<trainDays;j++)
             trainVMTot[i] += trainVMDetail[i][j];
-   int ExtrainDays = trainLen;
+   int ExtrainDays = min(60,trainLen);
     for(int i=1;i<=VM_TYPE_NUM;i++)
         for(int j=0;j<ExtrainDays;j++)
             everVMTot[i] += trainVMDetail[i][j];
@@ -319,26 +318,27 @@ void Train()
 void Predict()
 {
     int a[]={0, 0, 0, 0, 0, 0, 0, 115, 179, 144, 0, 0, 0, 0, 26, 194, 0, 23};
-    int b[]={21,40,1,12,29,2,1,33,8,1,10,11,0,5,0,1,4,0};
+    int b[]={76,89,14,35,92,12,10,140,37,4,43,35,13,13,5,14,7,0};
     for(int i=1;i<=VM_TYPE_NUM;i++)
         if(VMExist[i])
         {
            
             predictVMNum[i] = trainMVAvg[i] * predictDays  +0.5;
             a[i-1]=predictVMNum[i];
-         //   predictVMNum[i] = a[i-1];
-           // predictVMTotNum += predictVMNum[i];
+           // predictVMNum[i] = a[i-1];
+            predictVMTotNum += predictVMNum[i];
             extraVMNum[i] = predictVMNum[i]*0.3;
             predictVMTotCPU += predictVMNum[i]*VMCPU[i];
             predictVMTotMEM += predictVMNum[i]*VMMEM[i];
         }
     double A=0,B=0,C=0,tot=0;
     for(int i=0;i<=VM_TYPE_NUM-1;i++){
-        if(VMExist[i]){
+        if(VMExist[i+1]){
             tot++;
             A+=(a[i]-b[i])*(a[i]-b[i]);
             B+=a[i]*a[i];
             C+=b[i]*b[i];
+      //      printf("%d %d\n",a[i],b[i]);
         }
     }
     predictpercent=(1-sqrt(A/tot)/(sqrt(B/tot)+sqrt(C/tot)));
