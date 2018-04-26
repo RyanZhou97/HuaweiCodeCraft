@@ -65,6 +65,7 @@ int predictVMNum[VM_TYPE_NUM+5];
 int predictVMTotCPU;
 int predictVMTotMEM;
 int extraVMNum[VM_TYPE_NUM+5];
+double  predictpercent;
 
 /*---------------DP---------------------------*/
 int dp[VM_TYPE_NUM+5][1000][1000];
@@ -203,8 +204,7 @@ void common_input(char * info[MAX_INFO_NUM])
     sscanf(info[7+VM_type_num],"%s %s",predictStartDate,timestart);  // get 2015-02-20  no hava 00:00:00
     sscanf(info[8+VM_type_num],"%s %s",predictEndDate,timeend);      // and so go
     printf("timestart:%s timeend:%s\n",timestart,timeend);
-    predictDays=DaysBetween2Date(predictStartDate,predictEndDate);
-    //+SecondsLenCount(timestart,timeend)/86400;
+    predictDays=DaysBetween2Date(predictStartDate,predictEndDate)+SecondsLenCount(timestart,timeend)/86400;
 }
 
 void train_input(char * Data[MAX_DATA_NUM], int data_num)
@@ -228,47 +228,37 @@ void train_input(char * Data[MAX_DATA_NUM], int data_num)
         trainVMDetail[VMStringToInt[string(data[i].type)]][tempday]++;
     }
     TrainEndPredictStart=DaysBetween2Date(predictStartDate,trainEndDate);
+    trainLen = min(trainLen,60);
 }
 
 void Denoise()
 {
     double avg[VM_TYPE_NUM+5]={0};
     double sigma[VM_TYPE_NUM+5]={0};
-    double w=3.5;
-    for(int k=trainLen;k>=0;k--)
+    double amount[VM_TYPE_NUM+5]={0};
+    double w=4;
+    
+    
+    for(int i=1;i<=VM_TYPE_NUM;i++)
     {
-        //init
-        for(int i=0;i<20;i++)
-        {
-            avg[i]=0;
-            sigma[i]=0;
-        }
-        //get avg
-        for(int i=trainLen;i>=0;i--)
-            for(int j=1;j<=VM_TYPE_NUM;j++)
-                avg[j]+=trainVMDetail[j][i];
-        for(int j=1;j<=VM_TYPE_NUM;j++)
-            avg[j]=avg[j]/(trainLen+1);
-
-        //get sigma
-        for(int i=trainLen;i>=0;i--)
-            for(int j=1;j<=VM_TYPE_NUM;j++)
-                sigma[j]+=pow(trainVMDetail[j][i]-avg[j],2);
-
-        //denoise
-        for(int j=1;j<=VM_TYPE_NUM;j++)
-        {
-            sigma[j]=sqrt(sigma[j]/(trainLen+1));
-            if(trainVMDetail[j][k]>sigma[j]*w+avg[j]){
-                trainVMDetail[j][k]=sigma[j]*w+avg[j];
-               // printf("yichang:%d\n",DataDetailVMwareNum[k][j]);
+        for(int j=0;j<trainLen;j++)
+            if(trainVMDetail[i][j])
+            {
+                avg[i] += trainVMDetail[i][j];
+                amount[i]++;
             }
-            else if(trainVMDetail[j][k]<avg[j]-sigma[j]*w){
-                    trainVMDetail[j][k]=avg[j]-sigma[j]*w;
-            }
-        }
+    
+        avg[i] /= amount[i];
+        for(int j=0;j<trainLen;j++)
+            if(trainVMDetail[i][j])
+                sigma[i] += pow(avg[i]-trainVMDetail[i][j],2);
+        sigma[i] = sqrt(sigma[i]/(amount[i] - 1));
+        for(int j=0;j<trainLen;j++)    
+            if(trainVMDetail[i][j]>avg[i]+sigma[i]*w)
+                trainVMDetail[i][j] = avg[i] + sigma[i]*w;
     }
 }
+
 void Show()
 {
     printf("predictVMTotNum:%d\n",predictVMTotNum);
@@ -277,6 +267,7 @@ void Show()
     printf("serverTot:%d\n",serverTot);
     for(int i=0;i<serverTot;i++)
         printf("%s freeCPU:%d freeMEM:%d\n",serverName[serverList[i].type],serverList[i].freeCPU,serverList[i].freeMEM);
+      
 }
 
 void CalculatePercent()
@@ -293,56 +284,98 @@ void CalculatePercent()
     printf("serverTotCPU:%d serverTotMEM:%d\n",serverTotCPU,serverTotMEM);
     printf("CPUPercent:%.6f MEMPercent:%.6f\n",predictVMTotCPU*1.0/serverTotCPU,predictVMTotMEM*1.0/serverTotMEM);
     printf("avgPercent:%.6f\n",(predictVMTotCPU*1.0/serverTotCPU+predictVMTotMEM*1.0/serverTotMEM)/2);
-    if(trainLen<=20) exit(0);
+      printf("PREIDICT PERCENT:%lf\n",predictpercent);
 }
 
 double everVMTot[VM_TYPE_NUM+5]; 
+
+double TentrainVMTot[VM_TYPE_NUM+5];
 void Train()
 {
 
-    trainDays = 10;
+    trainDays = 25;
     for(int i=1;i<=VM_TYPE_NUM;i++)
         for(int j=0;j<trainDays;j++)
             trainVMTot[i] += trainVMDetail[i][j];
-
+   int ExtrainDays = trainLen;
     for(int i=1;i<=VM_TYPE_NUM;i++)
-        for(int j=0;j<trainLen;j++)
+        for(int j=0;j<ExtrainDays;j++)
             everVMTot[i] += trainVMDetail[i][j];
-
+   double sum=0;
     for(int i=1;i<=VM_TYPE_NUM;i++){
         trainMVAvg[i] = 1.0*trainVMTot[i]/trainDays;
-        everVMTot[i] = 1.0*everVMTot[i]/trainLen;
-       trainMVAvg[i]= (trainMVAvg[i]*0.6+everVMTot[i]*0.4);
+        everVMTot[i] = 1.0*everVMTot[i]/ExtrainDays;
+        sum+=everVMTot[i];
+      
     }
-
+   double p=1,a=0.5;
+    for(int i=1;i<=VM_TYPE_NUM;i++){
+        p=1.3+min((((TrainEndPredictStart+TrainEndPredictStart+predictDays)/2.0)/7.0)*0.25,2.0);//2*0.25 +  4*0.25
+        trainMVAvg[i]= (trainMVAvg[i]*a+everVMTot[i]*(1-a))*p;
+    }
 }
 
 
 void Predict()
 {
-    int a[]={77, 0, 0, 0, 124, 168, 15, 0, 142, 0, 0, 209, 0, 0, 160, 60, 192, 0};
+    int a[]={0, 0, 0, 0, 0, 0, 0, 115, 179, 144, 0, 0, 0, 0, 26, 194, 0, 23};
+    int b[]={21,40,1,12,29,2,1,33,8,1,10,11,0,5,0,1,4,0};
     for(int i=1;i<=VM_TYPE_NUM;i++)
         if(VMExist[i])
         {
-           // if(predictDays<=8) exit(0);
-            //double p=((TrainEndPredictStart+TrainEndPredictStart+predictDays)/2+5)*0.1-0.35;
-            double p=1.1;
-            predictVMNum[i] = max(0.0,trainMVAvg[i]) * predictDays * p +0.5;
-            //predictVMNum[i] = (trainMVAvg[i]*predictDays)*1.37+0.5;
-            //predictVMNum[i] = 100;
-            //predictVMNum[i] = a[i-1];
-            predictVMTotNum += predictVMNum[i];
-            extraVMNum[i] = predictVMNum[i]*0.33;
+           
+            predictVMNum[i] = trainMVAvg[i] * predictDays  +0.5;
+            a[i-1]=predictVMNum[i];
+         //   predictVMNum[i] = a[i-1];
+           // predictVMTotNum += predictVMNum[i];
+            extraVMNum[i] = predictVMNum[i]*0.3;
             predictVMTotCPU += predictVMNum[i]*VMCPU[i];
             predictVMTotMEM += predictVMNum[i]*VMMEM[i];
         }
+    double A=0,B=0,C=0,tot=0;
+    for(int i=0;i<=VM_TYPE_NUM-1;i++){
+        if(VMExist[i]){
+            tot++;
+            A+=(a[i]-b[i])*(a[i]-b[i]);
+            B+=a[i]*a[i];
+            C+=b[i]*b[i];
+        }
+    }
+    predictpercent=(1-sqrt(A/tot)/(sqrt(B/tot)+sqrt(C/tot)));
+
 }
 
 void Random()
 {}
 
-void FillServer(Server &server, int *VMNum, int &VMTotCPU, int &VMTotMEM)
+void FillServer(Server &server, int *VMNum, int &VMTotCPU, int &VMTotMEM, int pre = -1)
 {
+    int ok = 1;
+    if(pre != -1 && serverList[pre].type == 1)
+    {
+        for(int i=1;i<=VM_TYPE_NUM;i++)
+            if(serverList[pre].VMNum[i]>VMNum[i])
+            {
+                ok = 0;
+                break;
+            }
+    }
+    if(ok && pre != -1 && serverList[pre].type == 1)
+    {
+        for(int VMType=VM_TYPE_NUM;VMType>0;VMType--)
+        {
+            int num = serverList[pre].VMNum[VMType];
+            VMNum[VMType] -= num;
+            server.VMNum[VMType] += num;
+            server.freeCPU -= VMCPU[VMType] * num;
+            server.freeMEM -= VMMEM[VMType] * num;
+            VMTotCPU -= VMCPU[VMType] * num;
+            VMTotMEM -= VMMEM[VMType] * num;
+        }
+        return ;
+    }
+
+
     for(int i=1;i<=VM_TYPE_NUM;i++)
         for(int j=1;j<=server.freeCPU;j++)
             for(int k=1;k<=server.freeMEM;k++)
@@ -395,18 +428,20 @@ void PredictServerNum(int VMTotCPU,int VMTotMEM,int *serverNum)
     int loss = INF;
     for(int i=0;i<=limitServerNum[1];i++)
         for(int j=0;j<=limitServerNum[2];j++)
-            for(int k=0;k<=limitServerNum[3];k++)
+        {
+            int k = (VMTotCPU - serverCPU[1]*i - serverCPU[2]*j + serverCPU[3] - 1)/serverCPU[3];
+            k = max(k, (VMTotMEM - serverMEM[1]*i - serverMEM[2]*j+ serverMEM[3] -1)/serverMEM[3]);
+            
+            int lossCPU = i*serverCPU[1] + j*serverCPU[2] + k*serverCPU[3] - VMTotCPU;
+            int lossMEM = i*serverMEM[1] + j*serverMEM[2] + k*serverMEM[3] - VMTotMEM;
+            if(lossCPU >=0 && lossMEM>=0 && lossCPU+lossMEM<=loss)
             {
-                int lossCPU = i*serverCPU[1] + j*serverCPU[2] + k*serverCPU[3] - VMTotCPU;
-                int lossMEM = i*serverMEM[1] + j*serverMEM[2] + k*serverMEM[3] - VMTotMEM;
-                if(lossCPU >=0 && lossMEM>=0 && lossCPU+lossMEM<=loss)
-                {
-                    loss = lossCPU+lossMEM;
-                    serverNum[1]=i;
-                    serverNum[2]=j;
-                    serverNum[3]=k;
-                }
+                loss = lossCPU+lossMEM;
+                serverNum[1]=i;
+                serverNum[2]=j;
+                serverNum[3]=k;
             }
+        }
 }
 
 void InitAns()
@@ -429,69 +464,65 @@ void InitAns()
         if(tmpVMTotCPU==0) break;
         int tmpServerNum[SERVER_TYPE_NUM+5];
         int overflow = tmpVMTotMEM - tmpVMTotCPU*serverMEM[1]/serverCPU[1];
-        printf("overflow:%d\n", overflow);
+        //printf("outer: overflow:%d\n", overflow);
         if(flag == 2 || overflow>=serverMEM[2]-serverCPU[2]*serverMEM[1]/serverCPU[1])
             PredictServerNum(serverCPU[2],serverMEM[2],tmpServerNum);
         else if(flag == 3 || overflow<=serverMEM[3]-serverCPU[3]*serverMEM[1]/serverCPU[1]) 
             PredictServerNum(serverCPU[3],serverMEM[3],tmpServerNum);
         else
             PredictServerNum(tmpVMTotCPU,tmpVMTotMEM,tmpServerNum);
-        if(tmpServerNum[2]>0)
+
+        flag = -1;
+        int ok = 0;
+        for(int i=2;i<=SERVER_TYPE_NUM;i++)
         {
-            tmpServerNum[2]=1;
-            tmpServerNum[1]=tmpServerNum[3]=0;
-        }
-        else if(tmpServerNum[3]>0)
-        {
-            tmpServerNum[3]=1;
-            tmpServerNum[1]=0;
-        }
-        for(int i=SERVER_TYPE_NUM;i>=1;i--)
-        {
-            serverNum[i] += tmpServerNum[i];
             for(int j=1;j<=tmpServerNum[i];j++)
             {
+                serverNum[i]++;
                 serverList[serverTot].type = i;
                 serverList[serverTot].freeCPU = serverCPU[i];
                 serverList[serverTot].freeMEM = serverMEM[i];
-                serverTot++;
+                FillServer(serverList[serverTot],tmpVMNum,tmpVMTotCPU,tmpVMTotMEM);
+                serverTot++;  
+                len = serverTot;
+                ok = 1;
+                break;
             }
+            if(ok)
+                break;
         }
-        int tmplen = len;
-        for(;len<serverTot;len++)
-            FillServer(serverList[len],tmpVMNum,tmpVMTotCPU,tmpVMTotMEM);
-        
-        overflow = tmpVMTotMEM - tmpVMTotCPU*serverMEM[1]/serverCPU[1];
-        if(overflow>=serverMEM[2]-serverCPU[2]*serverMEM[1]/serverCPU[1])
+        if(ok)
+            continue;
+
+        for(int i=1;i<=tmpServerNum[1];i++)
         {
-            flag = 2;
-            for(;serverList[len-1].type==1;len--)
+            serverNum[1]++;
+            serverList[serverTot].type = 1;
+            serverList[serverTot].freeCPU = serverCPU[1];
+            serverList[serverTot].freeMEM = serverMEM[1];
+            FillServer(serverList[serverTot],tmpVMNum,tmpVMTotCPU,tmpVMTotMEM,serverTot-1);
+            serverTot++;
+
+            overflow = tmpVMTotMEM - tmpVMTotCPU*serverMEM[1]/serverCPU[1];
+            //printf("in: overflow:%d\n",overflow);
+            if(overflow>=serverMEM[2]-serverCPU[2]*serverMEM[1]/serverCPU[1])
+                flag = 2;
+            else if(overflow<=serverMEM[3]-serverCPU[3]*serverMEM[1]/serverCPU[1]) 
+                flag = 3;
+
+            if(flag != -1)
             {
-                serverNum[serverList[len-1].type]--;
-                CutServer(serverList[len-1],tmpVMNum,tmpVMTotCPU,tmpVMTotMEM);
+                for(;serverTot>len;serverTot--)
+                {
+                    serverNum[1]--;
+                    CutServer(serverList[serverTot-1],tmpVMNum,tmpVMTotCPU,tmpVMTotMEM);
+                }
+                break;
             }
-            serverTot = len;
         }
-        else if(overflow<=serverMEM[3]-serverCPU[3]*serverMEM[1]/serverCPU[1]) 
-        {
-            flag = 3;
-            for(;serverList[len-1].type==1;len--)
-            {
-                serverNum[serverList[len-1].type]--;
-                CutServer(serverList[len-1],tmpVMNum,tmpVMTotCPU,tmpVMTotMEM);
-            }
-            serverTot = len;
-        }
-        else 
-            flag = -1;
-        for(int i=tmplen;i<len;i++)
-            printf("%s\n",serverName[serverList[i].type]);
-        //printf("end\n");
+        len = serverTot;
     }
 }
-
-void SA()
-{}
 
 void FinalFill()
 {
@@ -551,14 +582,13 @@ void predict_server(char * info[MAX_INFO_NUM], char * data[MAX_DATA_NUM], int da
     Init_VMware(); 
     common_input(info);
     train_input(data,data_num);
-   // Denoise();
+    Denoise();
     Train();
     Predict();
     InitAns();
     FinalFill();
     Show();
     CalculatePercent();
-    SA();
     Output();
     write_result(output, filename);
 }
